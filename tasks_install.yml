@@ -1,0 +1,448 @@
+- name: Check required variables are configured
+  tags: do-not-render
+  block:
+    - fail:
+        msg: Variable "setup_user" is not configured
+      when: not setup_user|length
+    - fail:
+        msg: Variable "setup_ssh_authorized_key" is not configured
+      when: not setup_ssh_authorized_key|length
+
+- name: Setup font for console environment
+  debug:
+    msg: |
+      For high-resolution screens use bigger font
+      Run dpkg-reconfigure -plow console-setup
+          Encoding: UTF-8
+          Character set: combined -- Latin; Slavic Cyrillic; Hebrew; basic Arabian
+          Font: VGA
+          Size: 16x32
+
+- name: Setup HTTPS support for APT repositories
+  apt:
+      name:
+        - apt-transport-https
+        - curl
+
+- name: Install bluetooth drivers
+  apt:
+    name: firmware-iwlwifi
+
+- name: Setup service for /etc/rc.local
+  #todo_comment: Optionally restore file from backup
+  #provide_tags: ["rc-local"]
+  block:
+    - name: Enable systemd rc-local service
+      systemd_service:
+        name: rc-local
+        enabled: true
+    - name: Create minimal /etc/rc.local file if it does not exists
+      copy:
+        force: false
+        dest: /etc/rc.local
+        content: |
+          #!/bin/bash
+          exit 0
+
+- name: Install rfkill
+  #provide_tags: ["rfkill"]
+  apt:
+    name: rfkill
+
+- name: Disable bluetooth
+  #require_tags: ["rc-local", "rfkill"]
+  block:
+    - name: Stop bluetooth systemd service
+      systemd_service:
+        name: bluetooth
+        state: stopped
+        enabled: false
+    - name: Setup disabling wifi on hardware level in /etc/rc.local
+      tags: render-simple-setting
+      lineinfile:
+        path: /etc/rc.local
+        regexp: 'rfkill block bluetooth'
+        insertbefore: "^exit 0"
+        line: rfkill block bluetooth
+
+- name: Set up DNS
+  block:
+    - name: Configure public name services in /etc/resolv.conf
+      copy:
+          forse: yes
+          dest: /etc/resolv.conf
+          content: |
+              nameserver server=8.8.8.8 # google
+              nameserver server=77.88.8.8 # yandex
+    - name: Restrict modification of /etc/resolv.conf file
+      file:
+        path: /etc/resolv.conf
+        attributes: "+i"
+
+- name: Setup standard repositories in /etc/apt/sources.list
+  block:
+    - name: Use HTTPS for all repositories
+      replace:
+        path: /etc/apt/sources.list
+        regexp: '^deb http://(.+)'
+        replace: 'deb https://\1'
+    - name: Use "main contrib non-free non-free-firmware" for all standard repositories
+      replace:
+        path: /etc/apt/sources.list
+        regexp: '^(.+/(?:debian|debian-security).*bookworm).*main.*'
+        replace: '\1 main contrib non-free non-free-firmware'
+    - name: Update APT cache
+      apt:
+        update_cache: true
+
+- name: Install SSH Server and disable it
+  block:
+    - name: Install ssh server
+      apt:
+        name: openssh-server
+    - name: Disable and stop ssh server
+      systemd_service:
+        name: ssh
+        enabled: false
+        state: stopped
+
+- name: Config Files
+  debug:
+    msg: |
+      TODO
+      Base content of files must be part of this document.
+      Copy files from backup to user's home directory:
+      - .xsession
+      - .vimrc
+      - .config/awesome/rc.lua
+      - .bashrc.personal
+      - .tmux.conf
+      - .gitconfig
+      - .hgrc
+      - .pypirc (HAS TOKEN)
+      - .Xresources
+      - .xbindkeysrc
+      - ~/bin/
+      Add `source ~/.bashrc.personal` to "~/.bashrc"
+
+- name: Install sudo package and add user to sudo group
+  block:
+    - name: Install sudo package
+      apt:
+        name: sudo
+    - name: Add user to sudo group
+      user:
+        name: "{{ setup_user }}"
+        append: true
+        groups: sudo
+
+- name: Setup vim editor
+  block:
+    - apt:
+        name:
+          - python3-venv
+          - git
+          - vim-nox # vim packaged with extra features including python support
+    - debug:
+        msg: |
+          TODO
+          Also copy .vimrc to /root/.vimrc
+          sudo pip3 install black
+          Run vim, then inside thim run ":PlugInstall"
+          Run: update-alternatives --config editor # choose vim-nox
+          Run: select-editor # for current user, choose vim-nox
+          Run: sudo select-editor # for root, choose vim-nox
+
+- name: Copy ~/doc
+  debug:
+    msg: |
+      Copy docs
+      Symlink ~/doc/.ssh ~/.ssh
+
+- name: System backup
+  debug:
+    msg: |
+      /etc/hosts
+
+- name: Install packages to run desktop environment
+  apt:
+    name:
+     - xorg
+     - xserver-xorg-input-synaptics
+     - xserver-xorg-input-all
+     - awesome
+     - slim
+     - dbus-x11
+     - vim-gui-common
+     - xbindkeys
+     - rxvt-unicode
+     - xss-lock
+     - flameshot
+     - slock
+     - brightnessctl
+
+- name: Make urxvt default terminal emulator
+  command:
+    cmd: update-alternatives --set x-terminal-emulator /usr/bin/urxvt
+
+- name: Configure terminal emulator font
+  block:
+    - name: Install ttf-bitstream-vera font
+      apt:
+        name: ttf-bitstream-vera
+    - debug:
+        msg: |
+          Possibly update "size=XX" in the line "URxvt ... font: xft:...size=XX"
+          xrdb ~/.Xresources
+
+- name: Install Network Manager and configure it
+  block:
+    - name: Install Network Manager and utilities
+      apt:
+        name:
+          - network-manager
+          - network-manager-gnome
+          - network-manager-openvpn
+    - debug: 
+        msg: |
+          ifdown <wifi-iface>
+          Comment out lines in /etc/network/interfaces for wifi adapter
+          systemctl restart networking
+          Write to /etc/NetworkManager/conf.d/00-random-mac.conf:
+              [device]
+              wifi.scan-rand-mac-address=yes
+              [connection]
+              wifi.cloned-mac-address=stable
+              ethernet.cloned-mac-address=stable
+
+- name: Update ~/.Xresources
+  debug:
+    msg: |
+      Use https://dpi.lv/ to calculate DPI
+      Update "Xft.dpi: ..." line
+      xrdb ~/.Xresources
+
+- name: Start GUI
+  debug:
+    msg: |
+      systemctl start slim
+      if network manager says "device not ready" for wifi card, then restart laptop
+      might be caused by old network settings in /etc/network/interfaces
+
+- name: Intel sof (WTF?)
+  debug:
+    msg: |
+      download tarball from https://github.com/thesofproject/sof-bin/releases
+      unpack
+      sudo mv /lib/firmware/intel/sof* some_backup_location/
+      sudo mv /usr/local/bin/sof-*     some_backup_location/ # optional
+      rsync -a sof-v1.7/       /lib/firmware/intel/sof/
+      rsync -a sof-tplg-v1.7/  /lib/firmware/intel/sof-tplg/
+      rsync tools-v1.7/        /usr/local/bin/
+
+- name: Install brave browser
+  block:
+    - name: Download brave browser repo signature
+      get_url:
+        url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+        dest: /usr/share/keyrings/brave-browser-archive-keyring.gpg
+    - name: Configure APT repository for brave browser
+      copy:
+        dest: /etc/apt/sources.list.d/brave-browser-release.list
+        content: |
+          deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
+    - name: Install brave browser package
+      apt:
+        name: brave-browser
+        update_cache: true
+
+- name: As alternative to Brave Browser install Libre Wolf
+  debug:
+    msg: |
+      See ~/bin/install_librewolf.sh
+
+- name: Powertop
+  debug:
+    msg: |
+      sudo powertop --auto-tune # WTF how it works?
+
+- name: Sound
+  block:
+    - name: Install sound servers and utilities
+      apt:
+        name:
+          - pulseaudio
+          - pavucontrol
+          - alsa-utils
+    - debug:
+        msg: |
+          Restart laptop
+          Run pavucontrol, go Output Devices tab. Ensure that output is not muted.
+
+
+- name: Install and configure development tools
+  block:
+    - name: Install development packages
+      apt:
+        name:
+         - mariadb-client
+         - git
+         - mercurial
+         - p7zip-full
+         - unrar
+         - xz-utils
+         - libcurl4-openssl-dev
+         - libssl-dev
+         - build-essential
+         - strace
+         - screen
+         - tmux
+         - iotop
+         - python-is-python3
+         - python3-venv
+         - dnsutils
+         - whois
+         - traceroute
+         - pkg-config
+         - python3-pip
+         - psmisc
+         - rsync
+    - debug:
+        msg: |
+          pip3 install --break-system-packages -U pip
+          pip3 install --break-system-packages -U \
+              cookiecutter virtualenv pytest tox twine \
+              autosort black isort
+
+- name: Proxychains
+  debug:
+    msg: |
+      pip install -U mazer
+      pip install -U ansible
+      mazer install --namespace lorien git+https://github.com/lorien/cluster
+      # or
+      # cd /web
+      # git clone https://github.com/lorien/cluster
+      # mazer install -namespace lorien -e /web/cluster
+      anz.py role lorien.cluster.proxychains local
+
+- name: Setup using shared beeline internet
+  block:
+    - name: Set sysctl net.ipv4.ip_default_ttl
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_default_ttl
+        value: "65"
+
+- name: Install smartmontools
+  apt:
+    name: smartmontools
+
+- name: Disable IPv6, optional
+  block:
+    - name: Set sysctl net.ipv6.conf.all.disable_ipv6
+      ansible.posix.sysctl:
+        name: net.ipv6.conf.all.disable_ipv6
+        value: 1
+    - name: Set sysctl net.ipv6.conf.default.disable_ipv6
+      ansible.posix.sysctl:
+        name: net.ipv6.conf.default.disable_ipv6
+        value: 1
+    - debug:
+        msg: |
+          Update /etc/default/grub:
+              GRUB_CMDLINE_LINUX_DEFAULT="ipv6.disable=1  quiet"
+          Run:
+              update-grub
+              update-grub2
+          Reboot
+
+- name: Install tools for power management on laptop
+  apt:
+    name: tlp
+
+- name: Install tools to configure display brightness
+  block:
+    - name: Install brightnessctl package
+      apt:
+        name: brightnessctl
+    - debug:
+        msg: |
+          sudo chown root:user /sys/devices/pci0000\:00/0000\:00\:02.0/drm/card0/card0-eDP-1/intel_backlight/brightness
+          sudo chmod g+rw /sys/devices/pci0000\:00/0000\:00\:02.0/drm/card0/card0-eDP-1/intel_backlight/brightness
+          Update ~/.xbindkeysrc
+              "brightnessctl s 10%-"
+                XF86MonBrightnessDown
+              "brightnessctl s +10%"
+                XF86MonBrightnessUp
+
+- name: On desktop, disable wifi power save
+  debug:
+    msg: |
+      That helps to remove lags if you connect the desktop via ssh
+      from other machine
+      Put into /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf:
+          [connection]
+          wifi.powersave = 2 # 2 means disable
+
+- name: Setup SSH daemon
+  block:
+    - name: Configure SSH authorized key to access root account
+      ansible.posix.authorized_key:
+        key: "{{ setup_ssh_authorized_key }}"
+        user: "root"
+    - name: Configure SSH server do not use password authentication
+      block:
+        - tags: render-simple-setting
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: ^#*\s*PasswordAuthentication\s*(yes|no)\s*$
+            line: PasswordAuthentication no
+        - tags: render-simple-setting
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: ^#*\s*ChallengeResponseAuthentication\s*(yes|no)\s*$
+            line: ChallengeResponseAuthentication no
+    - name: Restart SSH server
+      systemd_service:
+        name: ssh
+        state: restarted
+
+- name: TRIM Operation for SSD
+  debug:
+    msg: |
+      There is nothing to do. Systemd service "fstrim" is active by default.
+
+- name: Low swap priority
+  block:
+    - name: Set sysctl vm.swappiness
+      ansible.posix.sysctl:
+        name: vm.swappiness
+        value: 1
+
+
+- name: Screenshots
+  apt:
+    name: flameshot
+
+- name: For IDEA
+  block:
+    - name: Set sysctl fs.inotify.max_user_watches
+      ansible.posix.sysctl:
+        name: fs.inotify.max_user_watches
+        value: 524288
+
+- name: Setup download directory
+  block:
+    - name: Create ~/Downloads directory
+      file:
+        path: "/home/{{ setup_user }}/Downloads"
+        state: directory
+        owner: "{{ setup_user }}"
+        group: "{{ setup_user }}"
+    - name: Create symlink ~/down -> ~/Downloads
+      file:
+        path: "/home/{{ setup_user }}/down"
+        state: link
+        src: "/home/{{ setup_user }}/Downloads"
+        owner: "{{ setup_user }}"
+        group: "{{ setup_user }}"

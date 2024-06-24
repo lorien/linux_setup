@@ -1,0 +1,27 @@
+name: Types
+
+on: ["push", "pull_request"]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python: ['3.12']
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python }}
+
+    - name: Install dependencies
+      run: |
+        pip install -U -r requirements_dev.txt
+
+    - name: Run tests
+      run: |
+        make mypy

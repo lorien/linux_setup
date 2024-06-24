@@ -1,0 +1,10 @@
+# Dev
+pip
+msgspec
+ansible
+
+# Code Quality
+ruff
+mypy
+pylint
+black

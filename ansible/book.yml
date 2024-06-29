@@ -5,4 +5,4 @@
     setup_ssh_authorized_key: "https://github.com/lorien.keys"
   tasks:
     - import_tasks:
-        file: tasks_install.yml
+        file: tasks.yml

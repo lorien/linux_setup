@@ -8,6 +8,14 @@
         msg: Variable "setup_ssh_authorized_key" is not configured
       when: not setup_ssh_authorized_key|length
 
+- name: About this document
+  block:
+    - tags: linux-setup-comment
+      debug:
+        msg: |
+          This is fancy rendering of ansible rules which I use to install
+          linux on a new machine. See details at [github.com/lorien/linux_setup](https://github.com/lorien/linux_setup).
+
 - name: Setup console font for non-GUI environment
   block:
     - tags: linux-setup-comment

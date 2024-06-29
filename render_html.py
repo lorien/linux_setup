@@ -3,7 +3,7 @@ from render import process_files
 
 
 def main() -> None:
-    process_files("book_install.yml", "tasks_install.yml")
+    process_files("ansible/book.yml", "ansible/tasks.yml")
 
 
 if __name__ == "__main__":

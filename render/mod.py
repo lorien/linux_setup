@@ -9,6 +9,7 @@ class Mod:
     re_param = re.compile(r"{{ *([_a-z0-9]+) *}}")
     re_param_mention = re.compile(r"\b[_a-z0-9]+\b")
     re_backtick = re.compile(r"`(.+?)`")
+    re_md_link = re.compile(r"\[([^\]]+)\]\(([^\)]+)\)")
 
     def render(
         self, args: dict[str, Any], params: dict[str, Any], _task: dict[str, Any]
@@ -62,8 +63,16 @@ class Mod:
         return cls.re_backtick.sub(lambda m: cls.render_code(m.group(1)), val)
 
     @classmethod
+    def render_markdown_links(cls, val: str) -> str:
+        return cls.re_md_link.sub(
+            lambda m: '<a href="{}">{}</a>'.format(m.group(2), m.group(1)), val
+        )
+
+    @classmethod
     def render_debug(cls, val: str) -> str:
-        return '<div class="debug">{}</div>'.format(cls.render_backtick(val))
+        return '<div class="debug">{}</div>'.format(
+            cls.render_markdown_links(cls.render_backtick(val))
+        )
 
     def parse_bool(self, val: Any) -> bool:
         if isinstance(val, bool):

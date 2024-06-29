@@ -1,2 +1,2 @@
 #!/bin/bash
-ansible-playbook ansible/book.yml -i inventory.yml
+ansible-playbook linux_setup/book.yml -i linux_setup/inventory.yml

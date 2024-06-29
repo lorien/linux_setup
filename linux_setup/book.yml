@@ -1,0 +1,7 @@
+- hosts: localhost
+  connection: local
+  tasks:
+    - include_vars:
+        file: vars.yml
+    - import_tasks:
+        file: tasks.yml

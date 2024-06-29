@@ -25,7 +25,7 @@ On software selection stage only "Standard system utilities" option must be sele
 
 ## Main Installation
 
-Main installation steps are described as ansible rules in [ansible/tasks.yml](ansible/tasks.yml) file.
+Main installation steps are described as ansible rules in [linux_setup/tasks.yml](linux_setup/tasks.yml) file.
 
 First download repository to your machine:
 
@@ -35,7 +35,7 @@ First download repository to your machine:
 - `cd ~ && git clone https://github.com/lorien/linux_setup`
 - `cd ~/linux_setup`
 
-Now you have to update `ansible/book.yml`:
+Now you have to update `linux_setup/vars.yml`:
 
 - Update `setup_user` with username of user you have created during initial installation stage
 - Update `setup_ssh_authorized_key` to URL where your public SSH key is located.

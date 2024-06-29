@@ -21,7 +21,7 @@ Other option is to use Ventoy ([https://ventoy.net](https://ventoy.net/)) to pre
 
 On partition disks stage the "Guided - use entire disk and set up encrypted LVM" must be selected.
 
-On software selection stage only the "laptop" option must be selected.
+On software selection stage only "Standard system utilities" option must be selected.
 
 ## OS Configuration
 

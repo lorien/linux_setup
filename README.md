@@ -23,11 +23,11 @@ On partition disks stage the "Guided - use entire disk and set up encrypted LVM"
 
 On software selection stage only "Standard system utilities" option must be selected.
 
-## OS Configuration
+## Main Installation
 
 Main installation steps are described as ansible rules in [ansible/tasks.yml](ansible/tasks.yml) file.
 
-Steps to prepare installation:
+First download repository to your machine:
 
 - `su # you must be root`
 - `apt install ansible`
@@ -41,7 +41,6 @@ Now you have to update `ansible/book.yml`:
 - Update `setup_ssh_authorized_key` to URL where your public SSH key is located.
 
 Now you can run installation: `./install.sh`
-
 
 God knows why, I've implemented a [rendering code in python](render_html.py) which converts ansible rules
 into fancy HTML which you can check at [lorien.github.io/linux_setup/html/install.html](https://lorien.github.io/linux_setup/html/install.html).

@@ -23,21 +23,25 @@ On partition disks stage the "Guided - use entire disk and set up encrypted LVM"
 
 On software selection stage only "Standard system utilities" option must be selected.
 
-On user account stage if you choose username "user" then you can run `ansible/book.yml` without modification. If
-you choose another username then you have to update "setup_user" variable in `ansible/book.yml`.
-
 ## OS Configuration
 
 Main installation steps are described as ansible rules in [ansible/tasks.yml](ansible/tasks.yml) file.
 
-Steps to run these ansible rules:
+Steps to prepare installation:
 
 - `su # you must be root`
 - `apt install ansible`
 - `apt install git`
 - `cd ~ && git clone https://github.com/lorien/linux_setup`
 - `cd ~/linux_setup`
-- `./install.sh`
+
+Now you have to update `ansible/book.yml`:
+
+- Update `setup_user` with username of user you have created during initial installation stage
+- Update `setup_ssh_authorized_key` to URL where your public SSH key is located.
+
+Now you can run installation: `./install.sh`
+
 
 God knows why, I've implemented a [rendering code in python](render_html.py) which converts ansible rules
 into fancy HTML which you can check at [lorien.github.io/linux_setup/html/install.html](https://lorien.github.io/linux_setup/html/install.html).

@@ -83,10 +83,11 @@
         path: /etc/rc.local
         mode: '764'
 
-- name: Install rfkill
+- name: Install rfkill to enable/disable bluetooth and wifi adapters
   #provide_tags: ["rfkill"]
-  apt:
-    name: rfkill
+  block:
+    - apt:
+        name: rfkill
 
 - name: Disable bluetooth
   #require_tags: ["rc-local", "rfkill"]

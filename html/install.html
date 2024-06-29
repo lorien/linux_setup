@@ -90,7 +90,7 @@ Add line <code>FONTSIZE="16x32"</code> to file <code>/etc/default/console-setup<
 Add line <code>CODESET="Uni1"</code> to file <code>/etc/default/console-setup</code>
 </p>
 <p>
-Run shell command: <code>dpkg-reconfigure --frontend noninteractive</code>
+Run shell command: <code>dpkg-reconfigure --frontend noninteractive console-setup</code>
 </p>
 </div><!-- end of div.indent-* -->
 <p>
@@ -113,9 +113,12 @@ exit 0
 Run command: <code>chmod 764 /etc/rc.local</code>
 </p>
 </div><!-- end of div.indent-* -->
+<h3>Install rfkill to enable/disable bluetooth and wifi adapters</h3>
+<div class="indent-1">
 <p>
 Run command <code>apt install rfkill</code>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Disable bluetooth</h3>
 <div class="indent-1">
 <p>
@@ -129,8 +132,8 @@ Add line <code>rfkill block bluetooth</code> to file <code>/etc/rc.local</code>
 <h3>Set up DNS</h3>
 <div class="indent-1">
 <p>
-Write to file /etc/resolv.conf (do not overwrite if file exists) this content:<pre>nameserver server=8.8.8.8 # google
-nameserver server=77.88.8.8 # yandex
+Write to file /etc/resolv.conf (do not overwrite if file exists) this content:<pre>nameserver 8.8.8.8 # google
+nameserver 77.88.8.8 # yandex
 </pre>
 </p>
 <p>
@@ -143,7 +146,7 @@ Run command: <code>chattr +i /etc/resolv.conf</code>
 In file /etc/apt/sources.list replace all lines that match regexp ^deb http://(.+) with deb https://\1
 </p>
 <p>
-In file /etc/apt/sources.list replace all lines that match regexp ^(.+/(?:debian|debian-security).*bookworm).*main.* with \1 main contrib non-free non-free-firmware
+In file /etc/apt/sources.list replace all lines that match regexp ^(.+/(?:debian/? bookworm |debian/? bookworm-updates |debian-security/? bookworm-security )).*main.* with \1 main contrib non-free non-free-firmware
 </p>
 <p>
 Update APT cache.

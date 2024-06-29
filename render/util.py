@@ -10,13 +10,17 @@ DOC_START = """
 <html>
 <head>
 <style>
-    h3 {
-        color: #2C3E50;
-    }
     body {
         max-width: 800px;
         margin: 1em auto;
-        font-size: 1.2em;
+        font-family: system-ui, sans-serif;
+    }
+    h3 {
+        color: #2C3E50;
+        margin-top: 1.5em;
+    }
+    p {
+        margin-top: 0.5em;
     }
     pre {
         background-color: #f3f3f3;
@@ -46,8 +50,13 @@ DOC_START = """
         margin-bottom: 1em;
     }
     .indent-1 {
-        padding-left: 2em;
-        border-left: 5px solid #f3f3f3;
+        padding-left: 0em;
+        /*border-left: 5px solid #f3f3f3;*/
+    }
+    .debug {
+        background-color: white;
+        padding: 0.4em;
+        border-left: 5px solid #FAD7A0;
     }
 </style>
 </head>
@@ -132,8 +141,10 @@ def render_tasks(
             render_tasks(task["block"], mod_reg, params, indent + 1)
         else:
             mod, args = get_module_args(task, mod_reg)
-            task_name = task.get("name", mod.mod_id)
-            print("<h3>{}</h3>".format(task_name))
+            # task_name = task.get("name")
+            # if task_name or not indent:
+            #    print("<h3>{}</h3>".format(task_name if task_name else mod.mod_id))
+            print("<p>")
             try:
                 if "when" in task:
                     print(render_when(task, params))
@@ -143,6 +154,7 @@ def render_tasks(
             except Exception:
                 pprint(task)
                 raise
+            print("</p>")
     print("</div><!-- end of div.indent-* -->")
 
 

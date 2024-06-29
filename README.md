@@ -25,9 +25,9 @@ On software selection stage only the "laptop" option must be selected.
 
 ## OS Configuration
 
-Main installation stage is described as ansible rules in [tasks_install.yml](tasks_install.yml) file.
+Main installation steps are described as ansible rules in [tasks_install.yml](tasks_install.yml) file.
 
-To run these tasks run as root this command `ansible-playbook -i inventory.yml book_install.yml`.
+To use these rules run as root this command `ansible-playbook -i inventory.yml book_install.yml`.
 
 To install ansible use command `apt install ansible`.
 

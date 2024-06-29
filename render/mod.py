@@ -8,6 +8,7 @@ class Mod:
     mod_id: str
     re_param = re.compile(r"{{ *([_a-z0-9]+) *}}")
     re_param_mention = re.compile(r"\b[_a-z0-9]+\b")
+    re_backtick = re.compile(r"`(.+?)`")
 
     def render(
         self, args: dict[str, Any], params: dict[str, Any], _task: dict[str, Any]
@@ -56,6 +57,14 @@ class Mod:
     def render_block_code(cls, val: str) -> str:
         return f"<pre>{val}</pre>"
 
+    @classmethod
+    def render_backtick(cls, val: str) -> str:
+        return cls.re_backtick.sub(lambda m: cls.render_code(m.group(1)), val)
+
+    @classmethod
+    def render_debug(cls, val: str) -> str:
+        return '<div class="debug">{}</div>'.format(cls.render_backtick(val))
+
     def parse_bool(self, val: Any) -> bool:
         if isinstance(val, bool):
             return val
@@ -77,7 +86,7 @@ class DebugMod(Mod):
     ) -> str:
         msg = args["msg"]
         assert isinstance(msg, str)
-        return self.render_block_code(msg)
+        return self.render_debug(msg)
 
 
 class FailMod(Mod):
@@ -170,7 +179,8 @@ class CommandMod(Mod):
         self, args: dict[str, Any], _params: dict[str, Any], _task: dict[str, Any]
     ) -> str:
         cmd = args["cmd"]
-        return "Run shell command: {}".format(cmd)
+        func = self.render_block_code if "\n" in cmd else self.render_code
+        return "Run shell command: {}".format(func(cmd))
 
 
 class GetUrlMod(Mod):
@@ -233,8 +243,9 @@ class LineInFileMod(Mod):
         line = args["line"]
         regexp = args["regexp"]
         if "render-simple-setting" in task.get("tags", []):
-            return "To file {} add line {}".format(
-                self.render_code(path), self.render_code(line)
+            return "Add line {} to file {}".format(
+                self.render_code(line),
+                self.render_code(path),
             )
         return (
             "In file {} search for line matching {} and replace it with {}."
@@ -258,6 +269,7 @@ class FileMod(Mod):
         group = args.get("group")
         owner = args.get("owner")
         state = args.get("state")
+        mode = args.get("mode")
         extra = []
         if owner:
             extra.append("chown {} {}".format(owner, path))
@@ -265,6 +277,8 @@ class FileMod(Mod):
             extra.append("chown :{} {}".format(group, path))
         if attributes:
             extra.append("chattr {} {}".format(attributes, path))
+        if mode:
+            extra.append("chmod {} {}".format(mode, path))
         extra_cmd = " \\\n    && ".join(extra) if extra else ""
         extra_cmd_joiner = " \\\n    && " if extra_cmd else ""
         if state == "directory":
@@ -274,7 +288,8 @@ class FileMod(Mod):
             ret = "ln -s {} {}{}{}".format(src, path, extra_cmd_joiner, extra_cmd)
         else:
             ret = extra_cmd
-        return "Run command: {}".format(self.render_block_code(ret))
+        func = self.render_block_code if "\n" in ret else self.render_code
+        return "Run command: {}".format(func(ret))
 
 
 class ReplaceMod(Mod):

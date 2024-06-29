@@ -8,16 +8,43 @@
         msg: Variable "setup_ssh_authorized_key" is not configured
       when: not setup_ssh_authorized_key|length
 
-- name: Setup font for console environment
-  debug:
-    msg: |
-      For high-resolution screens use bigger font
-      Run dpkg-reconfigure -plow console-setup
-          Encoding: UTF-8
-          Character set: combined -- Latin; Slavic Cyrillic; Hebrew; basic Arabian
-          Font: VGA
-          Size: 16x32
-
+- name: Setup console font for non-GUI environment
+  block:
+    - tags: linux-setup-comment
+      debug:
+        msg: |
+          For some reason `debconf-set-selections` does not affect on
+          `dpkg-reconfigure console-setup`. Working approach is to
+          change `/etc/default/console-setup` and then run `dpkg-reconfigure console-setup`.
+    - apt:
+        name: console-setup
+    - tags: render-simple-setting
+      lineinfile:
+        path: /etc/default/console-setup
+        regexp: '^CHARMAP\s*='
+        line: 'CHARMAP="UTF-8"'
+        insertbefore: 'EOF'
+    - tags: render-simple-setting
+      lineinfile:
+        path: /etc/default/console-setup
+        regexp: '^FONTFACE\s*='
+        line: 'FONTFACE="VGA"'
+        insertbefore: 'EOF'
+    - tags: render-simple-setting
+      lineinfile:
+        path: /etc/default/console-setup
+        regexp: '^FONTSIZE\s*='
+        line: 'FONTSIZE="16x32"'
+        insertbefore: 'EOF'
+    - tags: render-simple-setting
+      lineinfile:
+        path: /etc/default/console-setup
+        regexp: '^CODESET\s*='
+        line: 'CODESET="Uni1"'
+        insertbefore: 'EOF'
+    - command:
+        cmd: dpkg-reconfigure --frontend noninteractive
+        
 - name: Setup HTTPS support for APT repositories
   apt:
       name:
@@ -36,13 +63,17 @@
       systemd_service:
         name: rc-local
         enabled: true
-    - name: Create minimal /etc/rc.local file if it does not exists
+    - name: Ensure /etc/rc.local file exists
       copy:
         force: false
         dest: /etc/rc.local
         content: |
           #!/bin/bash
           exit 0
+    - name: Ensure /etc/rc.local file is executable
+      file:
+        path: /etc/rc.local
+        mode: '764'
 
 - name: Install rfkill
   #provide_tags: ["rfkill"]
@@ -376,13 +407,14 @@
                 XF86MonBrightnessUp
 
 - name: On desktop, disable wifi power save
-  debug:
-    msg: |
-      That helps to remove lags if you connect the desktop via ssh
-      from other machine
-      Put into /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf:
-          [connection]
-          wifi.powersave = 2 # 2 means disable
+  block:
+    - debug:
+        msg: |
+          That helps to remove lags if you connect the desktop via ssh
+          from other machine
+          Put into /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf:
+              [connection]
+              wifi.powersave = 2 # 2 means disable
 
 - name: Setup SSH daemon
   block:
@@ -412,7 +444,7 @@
     msg: |
       There is nothing to do. Systemd service "fstrim" is active by default.
 
-- name: Low swap priority
+- name: Set low priority to use swap file
   block:
     - name: Set sysctl vm.swappiness
       ansible.posix.sysctl:
@@ -420,11 +452,12 @@
         value: 1
 
 
-- name: Screenshots
-  apt:
-    name: flameshot
+- name: Install screenshot utils
+  block:
+    - apt:
+        name: flameshot
 
-- name: For IDEA
+- name: Setup system limits to run IDEA IDE
   block:
     - name: Set sysctl fs.inotify.max_user_watches
       ansible.posix.sysctl:

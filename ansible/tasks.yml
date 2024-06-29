@@ -51,7 +51,7 @@
         line: 'CODESET="Uni1"'
         insertbefore: 'EOF'
     - command:
-        cmd: dpkg-reconfigure --frontend noninteractive
+        cmd: dpkg-reconfigure --frontend noninteractive console-setup
         
 - name: Setup HTTPS support for APT repositories
   apt:
@@ -108,11 +108,11 @@
   block:
     - name: Configure public name services in /etc/resolv.conf
       copy:
-          forse: yes
+          forсe: yes
           dest: /etc/resolv.conf
           content: |
-              nameserver server=8.8.8.8 # google
-              nameserver server=77.88.8.8 # yandex
+              nameserver 8.8.8.8 # google
+              nameserver 77.88.8.8 # yandex
     - name: Restrict modification of /etc/resolv.conf file
       file:
         path: /etc/resolv.conf
@@ -128,7 +128,7 @@
     - name: Use "main contrib non-free non-free-firmware" for all standard repositories
       replace:
         path: /etc/apt/sources.list
-        regexp: '^(.+/(?:debian|debian-security).*bookworm).*main.*'
+        regexp: '^(.+/(?:debian/? bookworm |debian/? bookworm-updates |debian-security/? bookworm-security )).*main.*'
         replace: '\1 main contrib non-free non-free-firmware'
     - name: Update APT cache
       apt:

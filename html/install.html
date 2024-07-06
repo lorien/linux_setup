@@ -8,7 +8,7 @@
         font-family: system-ui, sans-serif;
     }
     h3 {
-        color: #2C3E50;
+        /*color: #2C3E50;*/
         margin-top: 1.5em;
     }
     p {
@@ -61,18 +61,13 @@
 <h3>About this document</h3>
 <div class="indent-1">
 <p>
-<div class="debug">This is fancy rendering of ansible rules which I use to install
-linux on a new machine. See details at <a href="https://github.com/lorien/linux_setup">github.com/lorien/linux_setup</a>.
-</div>
+<div class="debug">This is fancy rendering of ansible rules which I use to install<br>linux on a new machine. See details at <a href="https://github.com/lorien/linux_setup">github.com/lorien/linux_setup</a>.<br></div>
 </p>
 </div><!-- end of div.indent-* -->
 <h3>Setup console font for non-GUI environment</h3>
 <div class="indent-1">
 <p>
-<div class="debug">For some reason <code>debconf-set-selections</code> does not affect on
-<code>dpkg-reconfigure console-setup</code>. Working approach is to
-change <code>/etc/default/console-setup</code> and then run <code>dpkg-reconfigure console-setup</code>.
-</div>
+<div class="debug">For some reason <code>debconf-set-selections</code> does not affect on<br><code>dpkg-reconfigure console-setup</code>. Working approach is to<br>change <code>/etc/default/console-setup</code> and then run <code>dpkg-reconfigure console-setup</code>.<br></div>
 </p>
 <p>
 Run command <code>apt install console-setup</code>
@@ -90,22 +85,28 @@ Add line <code>FONTSIZE="16x32"</code> to file <code>/etc/default/console-setup<
 Add line <code>CODESET="Uni1"</code> to file <code>/etc/default/console-setup</code>
 </p>
 <p>
-Run shell command: <code>dpkg-reconfigure --frontend noninteractive console-setup</code>
+Run shell command <code>dpkg-reconfigure --frontend noninteractive console-setup</code>
 </p>
 </div><!-- end of div.indent-* -->
+<h3>Setup HTTPS support for APT repositories</h3>
+<div class="indent-1">
 <p>
 Run command <code>apt install apt-transport-https curl</code>
 </p>
+</div><!-- end of div.indent-* -->
+<h3>Install bluetooth drivers</h3>
+<div class="indent-1">
 <p>
 Run command <code>apt install firmware-iwlwifi</code>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Setup service for /etc/rc.local</h3>
 <div class="indent-1">
 <p>
 Run command: <code>systemctl enable rc-local</code>
 </p>
 <p>
-Write to file /etc/rc.local (do not overwrite if file exists) this content:<pre>#!/bin/bash
+Write to file <code>/etc/rc.local</code> (DO NOT overwrite if file exists) this content<pre>#!/bin/bash
 exit 0
 </pre>
 </p>
@@ -132,7 +133,7 @@ Add line <code>rfkill block bluetooth</code> to file <code>/etc/rc.local</code>
 <h3>Set up DNS</h3>
 <div class="indent-1">
 <p>
-Write to file /etc/resolv.conf (do not overwrite if file exists) this content:<pre>nameserver 8.8.8.8 # google
+Write to file <code>/etc/resolv.conf</code> (DO NOT overwrite if file exists) this content<pre>nameserver 8.8.8.8 # google
 nameserver 77.88.8.8 # yandex
 </pre>
 </p>
@@ -140,16 +141,16 @@ nameserver 77.88.8.8 # yandex
 Run command: <code>chattr +i /etc/resolv.conf</code>
 </p>
 </div><!-- end of div.indent-* -->
-<h3>Setup standard repositories in /etc/apt/sources.list</h3>
+<h3>Setup standard debian bookworm repositories</h3>
 <div class="indent-1">
 <p>
-In file /etc/apt/sources.list replace all lines that match regexp ^deb http://(.+) with deb https://\1
+Write to file <code>/etc/apt/sources.list</code> (OVERWRITE if file exists) this content<pre>deb https://ftp.debian.org/debian/ bookworm contrib main non-free non-free-firmware
+deb https://ftp.debian.org/debian/ bookworm-updates contrib main non-free non-free-firmware
+deb https://security.debian.org/debian-security/ bookworm-security contrib main non-free non-free-firmware
+</pre>
 </p>
 <p>
-In file /etc/apt/sources.list replace all lines that match regexp ^(.+/(?:debian/? bookworm |debian/? bookworm-updates |debian-security/? bookworm-security )).*main.* with \1 main contrib non-free non-free-firmware
-</p>
-<p>
-Update APT cache.
+Update APT cache with command <code>apt update</code>. 
 </p>
 </div><!-- end of div.indent-* -->
 <h3>Install SSH Server and disable it</h3>
@@ -162,31 +163,22 @@ Run command: <pre>systemctl stop ssh \
     && systemctl disable ssh</pre>
 </p>
 </div><!-- end of div.indent-* -->
+<h3>Setup config files located at user home directory</h3>
+<div class="indent-1">
 <p>
-<div class="debug">TODO
-Base content of files must be part of this document.
-Copy files from backup to user's home directory:
-- .xsession
-- .vimrc
-- .config/awesome/rc.lua
-- .bashrc.personal
-- .tmux.conf
-- .gitconfig
-- .hgrc
-- .pypirc (HAS TOKEN)
-- .Xresources
-- .xbindkeysrc
-- ~/bin/
-Add <code>source ~/.bashrc.personal</code> to "~/.bashrc"
-</div>
+Copy from book directory file <code>files/.xsession</code> to file <code>/home/<span data-name="setup_user" class="param">user</span>/.xsession</code> (DO NOT overwrite if file exists), ensure its owner is <code><span data-name="setup_user" class="param">user</span></code> and group is <code><span data-name="setup_user" class="param">user</span></code>
 </p>
+<p>
+<div class="debug">Copy files from backup to user's home directory:<br>- .vimrc<br>- .config/awesome/rc.lua<br>- .bashrc.personal<br>- .tmux.conf<br>- .gitconfig<br>- .hgrc<br>- .pypirc (HAS TOKEN)<br>- .Xresources<br>- .xbindkeysrc<br>- ~/bin/<br>Add <code>source ~/.bashrc.personal</code> to "~/.bashrc"<br></div>
+</p>
+</div><!-- end of div.indent-* -->
 <h3>Install sudo package and add user to sudo group</h3>
 <div class="indent-1">
 <p>
 Run command <code>apt install sudo</code>
 </p>
 <p>
-Add user <span data-name="setup_user" class="param">user</span> to groups sudo
+Add user <code><span data-name="setup_user" class="param">user</span></code> to group <code>sudo</code>
 </p>
 </div><!-- end of div.indent-* -->
 <h3>Setup vim editor</h3>
@@ -195,40 +187,34 @@ Add user <span data-name="setup_user" class="param">user</span> to groups sudo
 Run command <code>apt install python3-venv git vim-nox</code>
 </p>
 <p>
-<div class="debug">TODO
-Also copy .vimrc to /root/.vimrc
-sudo pip3 install black
-Run vim, then inside thim run ":PlugInstall"
-Run: update-alternatives --config editor # choose vim-nox
-Run: select-editor # for current user, choose vim-nox
-Run: sudo select-editor # for root, choose vim-nox
-</div>
+<div class="debug">TODO<br>Also copy .vimrc to /root/.vimrc<br>sudo pip3 install black<br>Run vim, then inside thim run ":PlugInstall"<br>Run: update-alternatives --config editor # choose vim-nox<br>Run: select-editor # for current user, choose vim-nox<br>Run: sudo select-editor # for root, choose vim-nox<br></div>
 </p>
 </div><!-- end of div.indent-* -->
 <p>
-<div class="debug">Copy docs
-Symlink ~/doc/.ssh ~/.ssh
-</div>
+<div class="debug">Copy docs<br>Symlink ~/doc/.ssh ~/.ssh<br></div>
 </p>
 <p>
-<div class="debug">/etc/hosts
-</div>
+<div class="debug">/etc/hosts<br></div>
 </p>
+<h3>Install packages to run desktop environment</h3>
+<div class="indent-1">
 <p>
 Run command <code>apt install xorg xserver-xorg-input-synaptics xserver-xorg-input-all awesome slim dbus-x11 vim-gui-common xbindkeys rxvt-unicode xss-lock flameshot slock brightnessctl</code>
 </p>
+</div><!-- end of div.indent-* -->
+<h3>Make urxvt default terminal emulator</h3>
+<div class="indent-1">
 <p>
-Run shell command: <code>update-alternatives --set x-terminal-emulator /usr/bin/urxvt</code>
+Run shell command <code>update-alternatives --set x-terminal-emulator /usr/bin/urxvt</code>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Configure terminal emulator font</h3>
 <div class="indent-1">
 <p>
 Run command <code>apt install ttf-bitstream-vera</code>
 </p>
 <p>
-<div class="debug">Possibly update "size=XX" in the line "URxvt ... font: xft:...size=XX"
-xrdb ~/.Xresources
-</div>
+<div class="debug">Possibly update "size=XX" in the line "URxvt ... font: xft:...size=XX"<br>xrdb ~/.Xresources<br></div>
 </p>
 </div><!-- end of div.indent-* -->
 <h3>Install Network Manager and configure it</h3>
@@ -237,39 +223,17 @@ xrdb ~/.Xresources
 Run command <code>apt install network-manager network-manager-gnome network-manager-openvpn</code>
 </p>
 <p>
-<div class="debug">ifdown <wifi-iface>
-Comment out lines in /etc/network/interfaces for wifi adapter
-systemctl restart networking
-Write to /etc/NetworkManager/conf.d/00-random-mac.conf:
-    [device]
-    wifi.scan-rand-mac-address=yes
-    [connection]
-    wifi.cloned-mac-address=stable
-    ethernet.cloned-mac-address=stable
-</div>
+<div class="debug">ifdown <wifi-iface><br>Comment out lines in /etc/network/interfaces for wifi adapter<br>systemctl restart networking<br>Write to /etc/NetworkManager/conf.d/00-random-mac.conf:<br>    [device]<br>    wifi.scan-rand-mac-address=yes<br>    [connection]<br>    wifi.cloned-mac-address=stable<br>    ethernet.cloned-mac-address=stable<br></div>
 </p>
 </div><!-- end of div.indent-* -->
 <p>
-<div class="debug">Use https://dpi.lv/ to calculate DPI
-Update "Xft.dpi: ..." line
-xrdb ~/.Xresources
-</div>
+<div class="debug">Use https://dpi.lv/ to calculate DPI<br>Update "Xft.dpi: ..." line<br>xrdb ~/.Xresources<br></div>
 </p>
 <p>
-<div class="debug">systemctl start slim
-if network manager says "device not ready" for wifi card, then restart laptop
-might be caused by old network settings in /etc/network/interfaces
-</div>
+<div class="debug">systemctl start slim<br>if network manager says "device not ready" for wifi card, then restart laptop<br>might be caused by old network settings in /etc/network/interfaces<br></div>
 </p>
 <p>
-<div class="debug">download tarball from https://github.com/thesofproject/sof-bin/releases
-unpack
-sudo mv /lib/firmware/intel/sof* some_backup_location/
-sudo mv /usr/local/bin/sof-*     some_backup_location/ # optional
-rsync -a sof-v1.7/       /lib/firmware/intel/sof/
-rsync -a sof-tplg-v1.7/  /lib/firmware/intel/sof-tplg/
-rsync tools-v1.7/        /usr/local/bin/
-</div>
+<div class="debug">download tarball from https://github.com/thesofproject/sof-bin/releases<br>unpack<br>sudo mv /lib/firmware/intel/sof* some_backup_location/<br>sudo mv /usr/local/bin/sof-*     some_backup_location/ # optional<br>rsync -a sof-v1.7/       /lib/firmware/intel/sof/<br>rsync -a sof-tplg-v1.7/  /lib/firmware/intel/sof-tplg/<br>rsync tools-v1.7/        /usr/local/bin/<br></div>
 </p>
 <h3>Install brave browser</h3>
 <div class="indent-1">
@@ -277,30 +241,29 @@ rsync tools-v1.7/        /usr/local/bin/
 Download document at https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg and save it to /usr/share/keyrings/brave-browser-archive-keyring.gpg , do nothing if file exists already
 </p>
 <p>
-Write to file /etc/apt/sources.list.d/brave-browser-release.list (do not overwrite if file exists) this content:<pre>deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
+Write to file <code>/etc/apt/sources.list.d/brave-browser-release.list</code> (DO NOT overwrite if file exists) this content<pre>deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
 </pre>
 </p>
 <p>
-Update APT cache.
+Update APT cache with command <code>apt update</code>. 
 </p>
 </div><!-- end of div.indent-* -->
+<h3>As alternative to Brave Browser install Libre Wolf</h3>
+<div class="indent-1">
 <p>
-<div class="debug">See ~/bin/install_librewolf.sh
-</div>
+<div class="debug">See ~/bin/install_librewolf.sh<br></div>
 </p>
+</div><!-- end of div.indent-* -->
+<h3>Powertop</h3>
+<div class="indent-1">
 <p>
-<div class="debug">sudo powertop --auto-tune # WTF how it works?
-</div>
+<div class="debug">sudo powertop --auto-tune # WTF how it works?<br></div>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Sound</h3>
 <div class="indent-1">
 <p>
 Run command <code>apt install pulseaudio pavucontrol alsa-utils</code>
-</p>
-<p>
-<div class="debug">Restart laptop
-Run pavucontrol, go Output Devices tab. Ensure that output is not muted.
-</div>
 </p>
 </div><!-- end of div.indent-* -->
 <h3>Install and configure development tools</h3>
@@ -309,33 +272,27 @@ Run pavucontrol, go Output Devices tab. Ensure that output is not muted.
 Run command <code>apt install mariadb-client git mercurial p7zip-full unrar xz-utils libcurl4-openssl-dev libssl-dev build-essential strace screen tmux iotop python-is-python3 python3-venv dnsutils whois traceroute pkg-config python3-pip psmisc rsync</code>
 </p>
 <p>
-<div class="debug">pip3 install --break-system-packages -U pip
-pip3 install --break-system-packages -U \
-    cookiecutter virtualenv pytest tox twine \
-    autosort black isort
-</div>
+<div class="debug">pip3 install --break-system-packages -U pip<br>pip3 install --break-system-packages -U \<br>    cookiecutter virtualenv pytest tox twine \<br>    autosort black isort<br></div>
 </p>
 </div><!-- end of div.indent-* -->
+<h3>Proxychains</h3>
+<div class="indent-1">
 <p>
-<div class="debug">pip install -U mazer
-pip install -U ansible
-mazer install --namespace lorien git+https://github.com/lorien/cluster
-# or
-# cd /web
-# git clone https://github.com/lorien/cluster
-# mazer install -namespace lorien -e /web/cluster
-anz.py role lorien.cluster.proxychains local
-</div>
+<div class="debug">pip install -U mazer<br>pip install -U ansible<br>mazer install --namespace lorien git+https://github.com/lorien/cluster<br># or<br># cd /web<br># git clone https://github.com/lorien/cluster<br># mazer install -namespace lorien -e /web/cluster<br>anz.py role lorien.cluster.proxychains local<br></div>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Setup using shared beeline internet</h3>
 <div class="indent-1">
 <p>
 Add setting <code>net.ipv4.ip_default_ttl</code> = <code>65</code> to <code>/etc/sysctl.conf</code> and run <code>sysctl -p</code>
 </p>
 </div><!-- end of div.indent-* -->
+<h3>Install smartmontools</h3>
+<div class="indent-1">
 <p>
 Run command <code>apt install smartmontools</code>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Disable IPv6, optional</h3>
 <div class="indent-1">
 <p>
@@ -345,43 +302,31 @@ Add setting <code>net.ipv6.conf.all.disable_ipv6</code> = <code>1</code> to <cod
 Add setting <code>net.ipv6.conf.default.disable_ipv6</code> = <code>1</code> to <code>/etc/sysctl.conf</code> and run <code>sysctl -p</code>
 </p>
 <p>
-<div class="debug">Update /etc/default/grub:
-    GRUB_CMDLINE_LINUX_DEFAULT="ipv6.disable=1  quiet"
-Run:
-    update-grub
-    update-grub2
-Reboot
-</div>
+In file <code>/etc/default/grub</code> search for line matching <code>^GRUB_CMDLINE_LINUX_DEFAULT="(.+)"</code> and replace it with <code>GRUB_CMDLINE_LINUX_DEFAULT="ipv6.disable=1 \1"</code>. If no match, insert this line before <code>EOF</code>
+</p>
+<p>
+Run shell command <code>update-grub</code>
 </p>
 </div><!-- end of div.indent-* -->
+<h3>Install tools for power management on laptop</h3>
+<div class="indent-1">
 <p>
 Run command <code>apt install tlp</code>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Install tools to configure display brightness</h3>
 <div class="indent-1">
 <p>
 Run command <code>apt install brightnessctl</code>
 </p>
 <p>
-<div class="debug">sudo chown root:user /sys/devices/pci0000\:00/0000\:00\:02.0/drm/card0/card0-eDP-1/intel_backlight/brightness
-sudo chmod g+rw /sys/devices/pci0000\:00/0000\:00\:02.0/drm/card0/card0-eDP-1/intel_backlight/brightness
-Update ~/.xbindkeysrc
-    "brightnessctl s 10%-"
-      XF86MonBrightnessDown
-    "brightnessctl s +10%"
-      XF86MonBrightnessUp
-</div>
+<div class="debug">sudo chown root:user /sys/devices/pci0000\:00/0000\:00\:02.0/drm/card0/card0-eDP-1/intel_backlight/brightness<br>sudo chmod g+rw /sys/devices/pci0000\:00/0000\:00\:02.0/drm/card0/card0-eDP-1/intel_backlight/brightness<br>Update ~/.xbindkeysrc<br>    "brightnessctl s 10%-"<br>      XF86MonBrightnessDown<br>    "brightnessctl s +10%"<br>      XF86MonBrightnessUp<br></div>
 </p>
 </div><!-- end of div.indent-* -->
 <h3>On desktop, disable wifi power save</h3>
 <div class="indent-1">
 <p>
-<div class="debug">That helps to remove lags if you connect the desktop via ssh
-from other machine
-Put into /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf:
-    [connection]
-    wifi.powersave = 2 # 2 means disable
-</div>
+<div class="debug">That helps to remove lags if you connect the desktop via ssh<br>from other machine<br>Put into /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf:<br>    [connection]<br>    wifi.powersave = 2 # 2 means disable<br></div>
 </p>
 </div><!-- end of div.indent-* -->
 <h3>Setup SSH daemon</h3>
@@ -402,10 +347,12 @@ Add line <code>ChallengeResponseAuthentication no</code> to file <code>/etc/ssh/
 Run command: <code>systemctl restart ssh</code>
 </p>
 </div><!-- end of div.indent-* -->
+<h3>TRIM Operation for SSD</h3>
+<div class="indent-1">
 <p>
-<div class="debug">There is nothing to do. Systemd service "fstrim" is active by default.
-</div>
+<div class="debug">There is nothing to do. Systemd service "fstrim" is active by default.<br></div>
 </p>
+</div><!-- end of div.indent-* -->
 <h3>Set low priority to use swap file</h3>
 <div class="indent-1">
 <p>
@@ -428,13 +375,23 @@ Add setting <code>fs.inotify.max_user_watches</code> = <code>524288</code> to <c
 <div class="indent-1">
 <p>
 Run command: <pre>mkdir -p /home/<span data-name="setup_user" class="param">user</span>/Downloads \
-    && chown <span data-name="setup_user" class="param">user</span> /home/<span data-name="setup_user" class="param">user</span>/Downloads \
-    && chown :<span data-name="setup_user" class="param">user</span> /home/<span data-name="setup_user" class="param">user</span>/Downloads</pre>
+    && chown <span data-name="setup_user" class="param">user</span>:<span data-name="setup_user" class="param">user</span> /home/<span data-name="setup_user" class="param">user</span>/Downloads</pre>
 </p>
 <p>
 Run command: <pre>ln -s /home/<span data-name="setup_user" class="param">user</span>/Downloads /home/<span data-name="setup_user" class="param">user</span>/down \
-    && chown <span data-name="setup_user" class="param">user</span> /home/<span data-name="setup_user" class="param">user</span>/down \
-    && chown :<span data-name="setup_user" class="param">user</span> /home/<span data-name="setup_user" class="param">user</span>/down</pre>
+    && chown <span data-name="setup_user" class="param">user</span>:<span data-name="setup_user" class="param">user</span> /home/<span data-name="setup_user" class="param">user</span>/down</pre>
+</p>
+</div><!-- end of div.indent-* -->
+<h3>Restart computer to ensure it works and starts normally</h3>
+<div class="indent-1">
+<p>
+Run shell command <code>reboot</code>
+</p>
+</div><!-- end of div.indent-* -->
+<h3>Check list after restart</h3>
+<div class="indent-1">
+<p>
+<div class="debug">Run pavucontrol, go Output Devices tab. Ensure that output is not muted.<br></div>
 </p>
 </div><!-- end of div.indent-* -->
 </div><!-- end of div.indent-* -->

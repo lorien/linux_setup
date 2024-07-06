@@ -54,14 +54,16 @@
         cmd: dpkg-reconfigure --frontend noninteractive console-setup
         
 - name: Setup HTTPS support for APT repositories
-  apt:
-      name:
-        - apt-transport-https
-        - curl
+  block:
+    - apt:
+        name:
+          - apt-transport-https
+          - curl
 
 - name: Install bluetooth drivers
-  apt:
-    name: firmware-iwlwifi
+  block:
+    - apt:
+        name: firmware-iwlwifi
 
 - name: Setup service for /etc/rc.local
   #todo_comment: Optionally restore file from backup
@@ -119,18 +121,25 @@
         path: /etc/resolv.conf
         attributes: "+i"
 
-- name: Setup standard repositories in /etc/apt/sources.list
+- name: Setup standard debian bookworm repositories
   block:
-    - name: Use HTTPS for all repositories
-      replace:
-        path: /etc/apt/sources.list
-        regexp: '^deb http://(.+)'
-        replace: 'deb https://\1'
-    - name: Use "main contrib non-free non-free-firmware" for all standard repositories
-      replace:
-        path: /etc/apt/sources.list
-        regexp: '^(.+/(?:debian/? bookworm |debian/? bookworm-updates |debian-security/? bookworm-security )).*main.*'
-        replace: '\1 main contrib non-free non-free-firmware'
+    #- name: Use HTTPS for all repositories
+    #  replace:
+    #    path: /etc/apt/sources.list
+    #    regexp: '^deb http://(.+)'
+    #    replace: 'deb https://\1'
+    #- name: Use "main contrib non-free non-free-firmware" for all standard repositories
+    #  replace:
+    #    path: /etc/apt/sources.list
+    #    regexp: '^(.+/(?:debian/? bookworm |debian/? bookworm-updates |debian-security/? bookworm-security )).*main.*'
+    #    replace: '\1 main contrib non-free non-free-firmware'
+    - copy:
+        force: yes
+        dest: /etc/apt/sources.list
+        content: |
+          deb https://ftp.debian.org/debian/ bookworm contrib main non-free non-free-firmware
+          deb https://ftp.debian.org/debian/ bookworm-updates contrib main non-free non-free-firmware
+          deb https://security.debian.org/debian-security/ bookworm-security contrib main non-free non-free-firmware
     - name: Update APT cache
       apt:
         update_cache: true
@@ -146,24 +155,27 @@
         enabled: false
         state: stopped
 
-- name: Config Files
-  debug:
-    msg: |
-      TODO
-      Base content of files must be part of this document.
-      Copy files from backup to user's home directory:
-      - .xsession
-      - .vimrc
-      - .config/awesome/rc.lua
-      - .bashrc.personal
-      - .tmux.conf
-      - .gitconfig
-      - .hgrc
-      - .pypirc (HAS TOKEN)
-      - .Xresources
-      - .xbindkeysrc
-      - ~/bin/
-      Add `source ~/.bashrc.personal` to "~/.bashrc"
+- name: Setup config files located at user home directory
+  block:
+    - copy:
+        src: files/.xsession
+        dest: /home/{{ setup_user }}/.xsession
+        owner: "{{ setup_user }}"
+        group: "{{ setup_user }}"
+    - debug:
+        msg: |
+          Copy files from backup to user's home directory:
+          - .vimrc
+          - .config/awesome/rc.lua
+          - .bashrc.personal
+          - .tmux.conf
+          - .gitconfig
+          - .hgrc
+          - .pypirc (HAS TOKEN)
+          - .Xresources
+          - .xbindkeysrc
+          - ~/bin/
+          Add `source ~/.bashrc.personal` to "~/.bashrc"
 
 - name: Install sudo package and add user to sudo group
   block:
@@ -205,25 +217,27 @@
       /etc/hosts
 
 - name: Install packages to run desktop environment
-  apt:
-    name:
-     - xorg
-     - xserver-xorg-input-synaptics
-     - xserver-xorg-input-all
-     - awesome
-     - slim
-     - dbus-x11
-     - vim-gui-common
-     - xbindkeys
-     - rxvt-unicode
-     - xss-lock
-     - flameshot
-     - slock
-     - brightnessctl
+  block:
+    - apt:
+        name:
+         - xorg
+         - xserver-xorg-input-synaptics
+         - xserver-xorg-input-all
+         - awesome
+         - slim
+         - dbus-x11
+         - vim-gui-common
+         - xbindkeys
+         - rxvt-unicode
+         - xss-lock
+         - flameshot
+         - slock
+         - brightnessctl
 
 - name: Make urxvt default terminal emulator
-  command:
-    cmd: update-alternatives --set x-terminal-emulator /usr/bin/urxvt
+  block:
+    - command:
+        cmd: update-alternatives --set x-terminal-emulator /usr/bin/urxvt
 
 - name: Configure terminal emulator font
   block:
@@ -297,14 +311,16 @@
         update_cache: true
 
 - name: As alternative to Brave Browser install Libre Wolf
-  debug:
-    msg: |
-      See ~/bin/install_librewolf.sh
+  block:
+    - debug:
+        msg: |
+          See ~/bin/install_librewolf.sh
 
 - name: Powertop
-  debug:
-    msg: |
-      sudo powertop --auto-tune # WTF how it works?
+  block:
+    - debug:
+        msg: |
+          sudo powertop --auto-tune # WTF how it works?
 
 - name: Sound
   block:
@@ -314,11 +330,6 @@
           - pulseaudio
           - pavucontrol
           - alsa-utils
-    - debug:
-        msg: |
-          Restart laptop
-          Run pavucontrol, go Output Devices tab. Ensure that output is not muted.
-
 
 - name: Install and configure development tools
   block:
@@ -355,16 +366,17 @@
               autosort black isort
 
 - name: Proxychains
-  debug:
-    msg: |
-      pip install -U mazer
-      pip install -U ansible
-      mazer install --namespace lorien git+https://github.com/lorien/cluster
-      # or
-      # cd /web
-      # git clone https://github.com/lorien/cluster
-      # mazer install -namespace lorien -e /web/cluster
-      anz.py role lorien.cluster.proxychains local
+  block:
+    - debug:
+        msg: |
+          pip install -U mazer
+          pip install -U ansible
+          mazer install --namespace lorien git+https://github.com/lorien/cluster
+          # or
+          # cd /web
+          # git clone https://github.com/lorien/cluster
+          # mazer install -namespace lorien -e /web/cluster
+          anz.py role lorien.cluster.proxychains local
 
 - name: Setup using shared beeline internet
   block:
@@ -374,8 +386,9 @@
         value: "65"
 
 - name: Install smartmontools
-  apt:
-    name: smartmontools
+  block:
+    - apt:
+        name: smartmontools
 
 - name: Disable IPv6, optional
   block:
@@ -387,18 +400,18 @@
       ansible.posix.sysctl:
         name: net.ipv6.conf.default.disable_ipv6
         value: 1
-    - debug:
-        msg: |
-          Update /etc/default/grub:
-              GRUB_CMDLINE_LINUX_DEFAULT="ipv6.disable=1  quiet"
-          Run:
-              update-grub
-              update-grub2
-          Reboot
+    - lineinfile:
+        path: /etc/default/grub
+        regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="(.+)"'
+        backrefs: true
+        line: 'GRUB_CMDLINE_LINUX_DEFAULT="ipv6.disable=1 \1"'
+    - command:
+        cmd: update-grub
 
 - name: Install tools for power management on laptop
-  apt:
-    name: tlp
+  block:
+    - apt:
+        name: tlp
 
 - name: Install tools to configure display brightness
   block:
@@ -449,9 +462,10 @@
         state: restarted
 
 - name: TRIM Operation for SSD
-  debug:
-    msg: |
-      There is nothing to do. Systemd service "fstrim" is active by default.
+  block:
+    - debug:
+        msg: |
+          There is nothing to do. Systemd service "fstrim" is active by default.
 
 - name: Set low priority to use swap file
   block:
@@ -488,3 +502,15 @@
         src: "/home/{{ setup_user }}/Downloads"
         owner: "{{ setup_user }}"
         group: "{{ setup_user }}"
+
+- name: Restart computer to ensure it works and starts normally
+  block:
+    - command:
+        cmd: reboot
+
+
+- name: Check list after restart
+  block:
+    - debug:
+        msg: |
+          Run pavucontrol, go Output Devices tab. Ensure that output is not muted.

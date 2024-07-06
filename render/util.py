@@ -16,7 +16,7 @@ DOC_START = """
         font-family: system-ui, sans-serif;
     }
     h3 {
-        color: #2C3E50;
+        /*color: #2C3E50;*/
         margin-top: 1.5em;
     }
     p {
@@ -176,12 +176,11 @@ def render_book_params(params: dict[str, Any]) -> None:
         print("No parameters")
 
 
-def process_files(book_path: str, tasks_path: str) -> None:
+def process_files(vars_path: str, tasks_path: str) -> None:
     mod_reg = build_mod_registry(ALL_MODS)
     print(DOC_START)
-    with open(book_path, mode="rb") as inp:
-        books = msgspec.yaml.decode(inp.read(), type=list[Book])
-        params = get_book_params(books[0])
+    with open(vars_path, mode="rb") as inp:
+        params = msgspec.yaml.decode(inp.read(), type=dict[str, Any])
         render_book_params(params)
     with open(tasks_path, mode="rb") as inp:
         tasks = msgspec.yaml.decode(inp.read(), type=list[dict[str, Any]])

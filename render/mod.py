@@ -71,8 +71,12 @@ class Mod:
     @classmethod
     def render_debug(cls, val: str) -> str:
         return '<div class="debug">{}</div>'.format(
-            cls.render_markdown_links(cls.render_backtick(val))
+            cls.render_new_lines(cls.render_markdown_links(cls.render_backtick(val)))
         )
+
+    @classmethod
+    def render_new_lines(cls, val: str) -> str:
+        return val.replace("\n", "<br>")
 
     def parse_bool(self, val: Any) -> bool:
         if isinstance(val, bool):
@@ -123,13 +127,16 @@ class AptMod(Mod):
             state = args.get("state", "installed")
             if isinstance(pkg_name, list):
                 pkg_name = " ".join(pkg_name)
+        update_cache_msg = "Update APT cache with command {}. ".format(
+            self.render_code("apt update")
+        )
         if pkg_name:
-            msg = "Update APT cache. " if update_cache else ""
+            msg = update_cache_msg if update_cache else ""
             if state == "installed":
                 return "{}Run command <code>apt install {}</code>".format(msg, pkg_name)
             raise RuntimeError(f"Unexpected apt state: {state}")
         if update_cache:
-            return "Update APT cache."
+            return update_cache_msg
         return "Do nothing"
 
 
@@ -174,7 +181,11 @@ class UserMod(Mod):
         append = self.parse_bool(args.get("append", False))
         if groups:
             if append:
-                return "Add user {} to groups {}".format(name, ",".join(groups))
+                return "Add user {} to group{} {}".format(
+                    self.render_code(name),
+                    "s" if len(groups) > 1 else "",
+                    self.render_code(",".join(groups)),
+                )
             return "Set supplimentary (all but main) groups of user {} to {}".format(
                 name, ",".join(groups)
             )
@@ -189,7 +200,7 @@ class CommandMod(Mod):
     ) -> str:
         cmd = args["cmd"]
         func = self.render_block_code if "\n" in cmd else self.render_code
-        return "Run shell command: {}".format(func(cmd))
+        return "Run shell command {}".format(func(cmd))
 
 
 class GetUrlMod(Mod):
@@ -231,14 +242,33 @@ class CopyMod(Mod):
         self, args: dict[str, Any], _params: dict[str, Any], _task: dict[str, Any]
     ) -> str:
         dest = args["dest"]
-        content = args["content"]
+        content = args.get("content")
+        src = args.get("src")
         force = args.get("force", False)
+        group = args.get("group")
+        owner = args.get("owner")
+        extra = []
+        extra_msg = ""
+        if owner:
+            extra.append("owner is {}".format(self.render_code(owner)))
+        if group:
+            extra.append("group is {}".format(self.render_code(group)))
+        if extra:
+            extra_msg = ", ensure its {}".format(" and ".join(extra))
         msg = " ({} if file exists)".format(
-            "overwrite" if force else "do not overwrite"
+            "OVERWRITE" if force else "DO NOT overwrite"
         )
-        return "Write to file {}{} this content:<pre>{}</pre>".format(
-            dest, msg, html.escape(content)
-        )
+        if content and src:
+            raise RuntimeError("Both content and src option are defined")
+        if content:
+            return "Write to file {}{} this content{}<pre>{}</pre>".format(
+                self.render_code(dest), msg, extra_msg, html.escape(content)
+            )
+        if src:
+            return "Copy from book directory file {} to file {}{}{}".format(
+                self.render_code(src), self.render_code(dest), msg, extra_msg
+            )
+        raise RuntimeError("Either content or src option must be defined")
 
 
 class LineInFileMod(Mod):
@@ -280,9 +310,11 @@ class FileMod(Mod):
         state = args.get("state")
         mode = args.get("mode")
         extra = []
-        if owner:
+        if owner and group:
+            extra.append("chown {}:{} {}".format(owner, group, path))
+        elif owner:
             extra.append("chown {} {}".format(owner, path))
-        if group:
+        elif group:
             extra.append("chown :{} {}".format(group, path))
         if attributes:
             extra.append("chattr {} {}".format(attributes, path))

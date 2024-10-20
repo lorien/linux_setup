@@ -276,6 +276,64 @@
               ethernet.cloned-mac-address=random
           Run: systemctl restart NetworkManager
 
+- name: Random MAC address and hostname
+  block:
+    - debug:
+        msg: |
+          Pre-up hooks are built as symbolic links to post-down hooks
+          because NetworkManager does not call pre-up hooks when
+          setting up network connection.
+
+    - name: Instal network post down hook to set random MAC address
+      copy:
+        force: true
+        dest: /etc/network/if-post-down.d/zz_random_mac
+        mode: '755'
+        content: |
+          #!/bin/sh
+          #
+          # Randomize MAC address.
+          # This hook is not as same as default macchanger hook: this hook use -A flag.
+          # This hook is post-down because NetworkManager does not run pre-up hooks.
+          # There is also symlink to this file in pre-up
+
+          LOGFILE="/var/log/post_down_random_mac.log"
+          echo "IFACE: $IFACE" | tee -a $LOGFILE
+          /usr/bin/macchanger -A $IFACE 2>&1 | tee -a $LOGFILE
+
+    - name: Setup network pre up hook as symblink to set random MAC address
+      file:
+        force: true
+        path: "/etc/network/if-pre-up.d/zz_random_mac"
+        state: link
+        src: "../if-post-down.d/zz_random_mac"
+
+    - name: Instal network post down hook to set random hostname
+      copy:
+        force: true
+        dest: /etc/network/if-post-down.d/zz_random_hostname
+        mode: '755'
+        content: |
+          #!/bin/sh
+          #
+          # Randomize hostname.
+          # This hook is post-down because NetworkManager does not run pre-up hooks.
+          # There is also symlink to this file in pre-up
+
+          LOGFILE="/var/log/post_down_random_hostname.log"
+          NEW_HOSTNAME=$(cat /dev/urandom | head -c 100 | md5sum | head -c 8)
+          echo "IFACE: $IFACE" | tee -a $LOGFILE
+          echo "HOSTNAME: $(/usr/bin/hostname)" | tee -a $LOGFILE
+          echo "NEW HOSTNAME: $NEW_HOSTNAME" | tee -a $LOGFILE
+          /usr/bin/hostnamectl set-hostname $NEW_HOSTNAME 2>&1 | tee -a $LOGFILE
+
+    - name: Setup network pre up hook to set random hostname
+      file:
+        force: true
+        path: "/etc/network/if-pre-up.d/zz_random_hostname"
+        state: link
+        src: "../if-post-down.d/zz_random_hostname"
+
 - name: Update ~/.Xresources
   debug:
     msg: |

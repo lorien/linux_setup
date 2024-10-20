@@ -106,7 +106,7 @@ Run command <code>apt install firmware-iwlwifi</code>
 Run command: <code>systemctl enable rc-local</code>
 </p>
 <p>
-Write to file <code>/etc/rc.local</code> (DO NOT overwrite if file exists) this content<pre>#!/bin/bash
+If file <code>/etc/rc.local</code> does not exist create it with content:<pre>#!/bin/bash
 exit 0
 </pre>
 </p>
@@ -133,7 +133,7 @@ Add line <code>rfkill block bluetooth</code> to file <code>/etc/rc.local</code>
 <h3>Set up DNS</h3>
 <div class="indent-1">
 <p>
-Write to file <code>/etc/resolv.conf</code> (DO NOT overwrite if file exists) this content<pre>nameserver 8.8.8.8 # google
+If file <code>/etc/resolv.conf</code> does not exist create it with content:<pre>nameserver 8.8.8.8 # google
 nameserver 77.88.8.8 # yandex
 </pre>
 </p>
@@ -144,7 +144,7 @@ Run command: <code>chattr +i /etc/resolv.conf</code>
 <h3>Setup standard debian bookworm repositories</h3>
 <div class="indent-1">
 <p>
-Write to file <code>/etc/apt/sources.list</code> (OVERWRITE if file exists) this content<pre>deb https://ftp.debian.org/debian/ bookworm contrib main non-free non-free-firmware
+Replace or create file <code>/etc/apt/sources.list</code> with content:<pre>deb https://ftp.debian.org/debian/ bookworm contrib main non-free non-free-firmware
 deb https://ftp.debian.org/debian/ bookworm-updates contrib main non-free non-free-firmware
 deb https://security.debian.org/debian-security/ bookworm-security contrib main non-free non-free-firmware
 </pre>
@@ -166,7 +166,7 @@ Run command: <pre>systemctl stop ssh \
 <h3>Setup config files located at user home directory</h3>
 <div class="indent-1">
 <p>
-Copy from book directory file <code>files/.xsession</code> to file <code>/home/<span data-name="setup_user" class="param">user</span>/.xsession</code> (DO NOT overwrite if file exists), ensure its owner is <code><span data-name="setup_user" class="param">user</span></code> and group is <code><span data-name="setup_user" class="param">user</span></code>
+If file <code>/home/<span data-name="setup_user" class="param">user</span>/.xsession</code> does not exist create it by copying <code>/home/<span data-name="setup_user" class="param">user</span>/.xsession</code><p>Run commands:<p> <p><code>chmod <span data-name="setup_user" class="param">user</span>:<span data-name="setup_user" class="param">user</span> /home/<span data-name="setup_user" class="param">user</span>/.xsession</code></p>
 </p>
 <p>
 <div class="debug">Copy files from backup to user's home directory:<br>- .vimrc<br>- .config/awesome/rc.lua<br>- .bashrc.personal<br>- .tmux.conf<br>- .gitconfig<br>- .hgrc<br>- .pypirc (HAS TOKEN)<br>- .Xresources<br>- .xbindkeysrc<br>- ~/bin/<br>Add <code>source ~/.bashrc.personal</code> to "~/.bashrc"<br></div>
@@ -223,7 +223,50 @@ Run command <code>apt install ttf-bitstream-vera</code>
 Run command <code>apt install network-manager network-manager-gnome network-manager-openvpn</code>
 </p>
 <p>
-<div class="debug">ifdown <wifi-iface><br>Comment out lines in /etc/network/interfaces for wifi adapter<br>systemctl restart networking<br>Write to /etc/NetworkManager/conf.d/00-random-mac.conf:<br>    [device]<br>    wifi.scan-rand-mac-address=yes<br>    [connection]<br>    wifi.cloned-mac-address=stable<br>    ethernet.cloned-mac-address=stable<br></div>
+<div class="debug">In [connection] section of NetworkManager config<br>you may want to use "stable" instead of "random"<br>if you want to keep your authentication state in<br>hotel/airport/etc wifi networks.<br></div>
+</p>
+<p>
+<div class="debug">Run: ifdown <wifi-interface><br>Comment out lines in /etc/network/interfaces related to wifi interface<br>Run: systemctl restart networking<br>Write to /etc/NetworkManager/conf.d/00-random-mac.conf:<br>    [device]<br>    wifi.scan-rand-mac-address=yes<br>    [connection]<br>    wifi.cloned-mac-address=random<br>    ethernet.cloned-mac-address=random<br>Run: systemctl restart NetworkManager<br></div>
+</p>
+</div><!-- end of div.indent-* -->
+<h3>Random MAC address and hostname</h3>
+<div class="indent-1">
+<p>
+<div class="debug">Pre-up hooks are built as symbolic links to post-down hooks<br>because NetworkManager does not call pre-up hooks when<br>setting up network connection.<br></div>
+</p>
+<p>
+Replace or create file <code>/etc/network/if-post-down.d/zz_random_mac</code> with content:<pre>#!/bin/sh
+#
+# Randomize MAC address.
+# This hook is not as same as default macchanger hook: this hook use -A flag.
+# This hook is post-down because NetworkManager does not run pre-up hooks.
+# There is also symlink to this file in pre-up
+
+LOGFILE=&quot;/var/log/post_down_random_mac.log&quot;
+echo &quot;IFACE: $IFACE&quot; | tee -a $LOGFILE
+/usr/bin/macchanger -A $IFACE 2&gt;&amp;1 | tee -a $LOGFILE
+</pre>
+</p>
+<p>
+Run command: <code>ln -s ../if-post-down.d/zz_random_mac /etc/network/if-pre-up.d/zz_random_mac</code>
+</p>
+<p>
+Replace or create file <code>/etc/network/if-post-down.d/zz_random_hostname</code> with content:<pre>#!/bin/sh
+#
+# Randomize hostname.
+# This hook is post-down because NetworkManager does not run pre-up hooks.
+# There is also symlink to this file in pre-up
+
+LOGFILE=&quot;/var/log/post_down_random_hostname.log&quot;
+NEW_HOSTNAME=$(cat /dev/urandom | head -c 100 | md5sum | head -c 8)
+echo &quot;IFACE: $IFACE&quot; | tee -a $LOGFILE
+echo &quot;HOSTNAME: $(/usr/bin/hostname)&quot; | tee -a $LOGFILE
+echo &quot;NEW HOSTNAME: $NEW_HOSTNAME&quot; | tee -a $LOGFILE
+/usr/bin/hostnamectl set-hostname $NEW_HOSTNAME 2&gt;&amp;1 | tee -a $LOGFILE
+</pre>
+</p>
+<p>
+Run command: <code>ln -s ../if-post-down.d/zz_random_hostname /etc/network/if-pre-up.d/zz_random_hostname</code>
 </p>
 </div><!-- end of div.indent-* -->
 <p>
@@ -241,7 +284,7 @@ Run command <code>apt install network-manager network-manager-gnome network-mana
 Download document at https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg and save it to /usr/share/keyrings/brave-browser-archive-keyring.gpg , do nothing if file exists already
 </p>
 <p>
-Write to file <code>/etc/apt/sources.list.d/brave-browser-release.list</code> (DO NOT overwrite if file exists) this content<pre>deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
+If file <code>/etc/apt/sources.list.d/brave-browser-release.list</code> does not exist create it with content:<pre>deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
 </pre>
 </p>
 <p>

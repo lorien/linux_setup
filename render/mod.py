@@ -247,27 +247,43 @@ class CopyMod(Mod):
         force = args.get("force", False)
         group = args.get("group")
         owner = args.get("owner")
-        extra = []
-        extra_msg = ""
-        if owner:
-            extra.append("owner is {}".format(self.render_code(owner)))
-        if group:
-            extra.append("group is {}".format(self.render_code(group)))
-        if extra:
-            extra_msg = ", ensure its {}".format(" and ".join(extra))
-        msg = " ({} if file exists)".format(
-            "OVERWRITE" if force else "DO NOT overwrite"
+        extra_cmd_items = []
+        if owner and group:
+            extra_cmd_items.append("chmod {}:{} {}".format(owner, group, dest))
+        elif owner:
+            extra_cmd_items.append("chmod {} {}".format(owner, dest))
+        elif group:
+            extra_cmd_items.append("chmod :{} {}".format(group, dest))
+        # msg = " ({} if file exists)".format(
+        #    "OVERWRITE" if force else "DO NOT overwrite"
+        # )
+        extra_cmd = (
+            "<p>Run commands:<p> {}".format(
+                "\n".join(
+                    "<p>{}</p>".format(self.render_code(x)) for x in extra_cmd_items
+                )
+            )
+            if extra_cmd_items
+            else ""
         )
         if content and src:
             raise RuntimeError("Both content and src option are defined")
         if content:
-            return "Write to file {}{} this content{}<pre>{}</pre>".format(
-                self.render_code(dest), msg, extra_msg, html.escape(content)
+            msg = (
+                "Replace or create file {dest} with content:"
+                if force
+                else "If file {dest} does not exist create it with content:"
+            ).format(dest=self.render_code(dest))
+            return "{}{}{}".format(
+                msg, self.render_block_code(html.escape(content)), extra_cmd
             )
         if src:
-            return "Copy from book directory file {} to file {}{}{}".format(
-                self.render_code(src), self.render_code(dest), msg, extra_msg
-            )
+            msg = (
+                "Copy file {src} to {dest} (replace if exists)"
+                if force
+                else "If file {dest} does not exist create it by copying {dest}"
+            ).format(dest=self.render_code(dest), src=self.render_code(src))
+            return "{}{}".format(msg, extra_cmd)
         raise RuntimeError("Either content or src option must be defined")
 
 

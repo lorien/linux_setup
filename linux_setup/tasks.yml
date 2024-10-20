@@ -257,17 +257,24 @@
           - network-manager
           - network-manager-gnome
           - network-manager-openvpn
+    - debug:
+        msg: |
+          In [connection] section of NetworkManager config
+          you may want to use "stable" instead of "random"
+          if you want to keep your authentication state in
+          hotel/airport/etc wifi networks.
     - debug: 
         msg: |
-          ifdown <wifi-iface>
-          Comment out lines in /etc/network/interfaces for wifi adapter
-          systemctl restart networking
+          Run: ifdown <wifi-interface>
+          Comment out lines in /etc/network/interfaces related to wifi interface
+          Run: systemctl restart networking
           Write to /etc/NetworkManager/conf.d/00-random-mac.conf:
               [device]
               wifi.scan-rand-mac-address=yes
               [connection]
-              wifi.cloned-mac-address=stable
-              ethernet.cloned-mac-address=stable
+              wifi.cloned-mac-address=random
+              ethernet.cloned-mac-address=random
+          Run: systemctl restart NetworkManager
 
 - name: Update ~/.Xresources
   debug:

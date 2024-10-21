@@ -298,7 +298,12 @@
           # There is also symlink to this file in pre-up
 
           LOGFILE="/var/log/post_down_random_mac.log"
+          echo "DATE: $(date)" | tee -a $LOGFILE
           echo "IFACE: $IFACE" | tee -a $LOGFILE
+          if [ "$IFACE" = "--all" -o "$IFACE" = "lo" -o "$IFACE" = "" ]; then
+              echo "Ignoring interface [$IFACE]" | tee -a $LOGFILE
+              exit 0
+          fi
           /usr/bin/macchanger -A $IFACE 2>&1 | tee -a $LOGFILE
 
     - name: Setup network pre up hook as symblink to set random MAC address
@@ -321,8 +326,13 @@
           # There is also symlink to this file in pre-up
 
           LOGFILE="/var/log/post_down_random_hostname.log"
-          NEW_HOSTNAME=$(cat /dev/urandom | head -c 100 | md5sum | head -c 8)
+          echo "DATE: $(date)" | tee -a $LOGFILE
           echo "IFACE: $IFACE" | tee -a $LOGFILE
+          if [ "$IFACE" = "--all" -o "$IFACE" = "lo" -o "$IFACE" = "" ]; then
+              echo "Ignoring interface [$IFACE]" | tee -a $LOGFILE
+              exit 0
+          fi
+          NEW_HOSTNAME=$(cat /dev/urandom | head -c 100 | md5sum | head -c 8)
           echo "HOSTNAME: $(/usr/bin/hostname)" | tee -a $LOGFILE
           echo "NEW HOSTNAME: $NEW_HOSTNAME" | tee -a $LOGFILE
           /usr/bin/hostnamectl set-hostname $NEW_HOSTNAME 2>&1 | tee -a $LOGFILE

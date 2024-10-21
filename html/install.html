@@ -243,7 +243,12 @@ Replace or create file <code>/etc/network/if-post-down.d/zz_random_mac</code> wi
 # There is also symlink to this file in pre-up
 
 LOGFILE=&quot;/var/log/post_down_random_mac.log&quot;
+echo &quot;DATE: $(date)&quot; | tee -a $LOGFILE
 echo &quot;IFACE: $IFACE&quot; | tee -a $LOGFILE
+if [ &quot;$IFACE&quot; = &quot;--all&quot; -o &quot;$IFACE&quot; = &quot;lo&quot; -o &quot;$IFACE&quot; = &quot;&quot; ]; then
+    echo &quot;Ignoring interface [$IFACE]&quot; | tee -a $LOGFILE
+    exit 0
+fi
 /usr/bin/macchanger -A $IFACE 2&gt;&amp;1 | tee -a $LOGFILE
 </pre>
 </p>
@@ -258,8 +263,13 @@ Replace or create file <code>/etc/network/if-post-down.d/zz_random_hostname</cod
 # There is also symlink to this file in pre-up
 
 LOGFILE=&quot;/var/log/post_down_random_hostname.log&quot;
-NEW_HOSTNAME=$(cat /dev/urandom | head -c 100 | md5sum | head -c 8)
+echo &quot;DATE: $(date)&quot; | tee -a $LOGFILE
 echo &quot;IFACE: $IFACE&quot; | tee -a $LOGFILE
+if [ &quot;$IFACE&quot; = &quot;--all&quot; -o &quot;$IFACE&quot; = &quot;lo&quot; -o &quot;$IFACE&quot; = &quot;&quot; ]; then
+    echo &quot;Ignoring interface [$IFACE]&quot; | tee -a $LOGFILE
+    exit 0
+fi
+NEW_HOSTNAME=$(cat /dev/urandom | head -c 100 | md5sum | head -c 8)
 echo &quot;HOSTNAME: $(/usr/bin/hostname)&quot; | tee -a $LOGFILE
 echo &quot;NEW HOSTNAME: $NEW_HOSTNAME&quot; | tee -a $LOGFILE
 /usr/bin/hostnamectl set-hostname $NEW_HOSTNAME 2&gt;&amp;1 | tee -a $LOGFILE
@@ -267,6 +277,21 @@ echo &quot;NEW HOSTNAME: $NEW_HOSTNAME&quot; | tee -a $LOGFILE
 </p>
 <p>
 Run command: <code>ln -s ../if-post-down.d/zz_random_hostname /etc/network/if-pre-up.d/zz_random_hostname</code>
+</p>
+</div><!-- end of div.indent-* -->
+<h3>Disable avahi-daemon (MDNS) Publishing</h3>
+<div class="indent-1">
+<p>
+<div class="debug">Install avahi-daemon to ensure its config file exists</div>
+</p>
+<p>
+Run command <code>apt install avahi-daemon</code>
+</p>
+<p>
+In file <code>/etc/avahi/avahi-daemon.conf</code> search for line matching <code>^\s*#?\s*disable-publishing\s*=</code> and replace it with <code>disable-publishing=yes</code>. If no match, insert this line before <code>EOF</code>
+</p>
+<p>
+Run command: <code>systemctl restart avahi-daemon</code>
 </p>
 </div><!-- end of div.indent-* -->
 <p>

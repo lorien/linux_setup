@@ -344,6 +344,23 @@
         state: link
         src: "../if-post-down.d/zz_random_hostname"
 
+- name: Disable Avahi Daemon (MDNS) Publishing
+  block:
+    - debug:
+        msg: Install avahi-daemon to ensure its config file exists
+    - apt:
+        name: avahi-daemon
+    - lineinfile:
+        path: /etc/avahi/avahi-daemon.conf
+        regexp: '^\s*#?\s*disable-publishing\s*='
+        line: "disable-publishing=yes"
+        insertafter: '^\[publish\]'
+    - systemd_service:
+        name: avahi-daemon
+        state: restarted
+        
+
+
 - name: Update ~/.Xresources
   debug:
     msg: |
